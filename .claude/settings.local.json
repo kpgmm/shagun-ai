@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(python:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@canary:*)",
+      "Bash(./venv/Scripts/pip install:*)",
+      "Bash(./venv/Scripts/python:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm:*)",
+      "Bash(./venv/Scripts/pip uninstall:*)",
+      "Bash(ls:*)",
+      "Bash(./venv/Scripts/activate:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(netstat:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(\"C:/Ketan/Projects/shagun-ai/backend/venv/Scripts/python.exe\":*)",
+      "Bash(dir /s /b \"D:\\\\temp_projects\\\\Projects\\\\shagun-ai\\\\backend\\\\routers\\\\entries.py\")",
+      "Bash(venv\\\\Scripts\\\\python.exe -m pip install reportlab --quiet)",
+      "Bash(venv\\\\Scripts\\\\python.exe -c \"import reportlab; print\\('reportlab', reportlab.Version\\)\")",
+      "PowerShell(python -m pip install reportlab==4.5.0 --quiet; python -c \"import reportlab; print\\('reportlab', reportlab.Version\\)\")",
+      "PowerShell(python -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:8000/\" -Method Get 2>&1)",
+      "PowerShell(try { $r = Invoke-RestMethod -Uri \"http://localhost:8000/\" -Method Get; $r } catch { \"Server not running: $_\" })",
+      "Bash(ngrok version *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(python -m pip install pyngrok --quiet; python -c \"import pyngrok; print\\('pyngrok OK'\\)\" 2>&1)"
+    ]
+  }
+}
