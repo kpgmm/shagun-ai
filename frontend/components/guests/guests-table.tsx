@@ -3,10 +3,11 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Pencil, Trash2, Send, Filter, X } from "lucide-react"
+import { Pencil, Trash2, Send, Filter, X, Search } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -31,8 +32,10 @@ const RELATION_LABELS: Record<string, string> = {
 export function GuestsTable({ eventId }: { eventId: string }) {
   const queryClient = useQueryClient()
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
+  const [search, setSearch] = useState("")
   const [filterRelation, setFilterRelation] = useState<string>("all")
   const [filterRsvp, setFilterRsvp] = useState<string>("all")
+  const [filterInvite, setFilterInvite] = useState<string>("all")
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sendingSelected, setSendingSelected] = useState(false)
@@ -44,15 +47,23 @@ export function GuestsTable({ eventId }: { eventId: string }) {
     queryFn: () => api.get<Guest[]>(`/api/events/${eventId}/guests`),
   })
 
-  const filtered = useMemo(
-    () =>
-      guests.filter((g) => {
-        if (filterRelation !== "all" && g.relation_side !== filterRelation) return false
-        if (filterRsvp !== "all" && g.rsvp_status !== filterRsvp) return false
-        return true
-      }),
-    [guests, filterRelation, filterRsvp],
-  )
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return guests.filter((g) => {
+      if (q) {
+        const match =
+          g.name.toLowerCase().includes(q) ||
+          g.phone.includes(q) ||
+          (g.village ?? "").toLowerCase().includes(q)
+        if (!match) return false
+      }
+      if (filterRelation !== "all" && g.relation_side !== filterRelation) return false
+      if (filterRsvp !== "all" && g.rsvp_status !== filterRsvp) return false
+      if (filterInvite === "sent" && !g.invite_sent) return false
+      if (filterInvite === "not_sent" && g.invite_sent) return false
+      return true
+    })
+  }, [guests, search, filterRelation, filterRsvp, filterInvite])
 
   const selectedInFiltered = useMemo(
     () => filtered.filter((g) => selectedIds.has(g.id)),
@@ -143,38 +154,86 @@ export function GuestsTable({ eventId }: { eventId: string }) {
     }
   }
 
+  const hasActiveFilters = search !== "" || filterRelation !== "all" || filterRsvp !== "all" || filterInvite !== "all"
+
+  function clearFilters() {
+    setSearch("")
+    setFilterRelation("all")
+    setFilterRsvp("all")
+    setFilterInvite("all")
+  }
+
   if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />
 
   return (
     <div className="space-y-3">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={filterRelation} onValueChange={setFilterRelation}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Relations" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Relations</SelectItem>
-            {Object.entries(RELATION_LABELS).map(([v, l]) => (
-              <SelectItem key={v} value={v}>{l}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterRsvp} onValueChange={setFilterRsvp}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All RSVP" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All RSVP</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="coming">Coming</SelectItem>
-            <SelectItem value="not_coming">Not Coming</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground ml-auto">
-          {filtered.length} of {guests.length} guests
-        </span>
+      {/* Search + Filters */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by name, phone, or village…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Select value={filterRelation} onValueChange={setFilterRelation}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All Relations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Relations</SelectItem>
+              {Object.entries(RELATION_LABELS).map(([v, l]) => (
+                <SelectItem key={v} value={v}>{l}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterRsvp} onValueChange={setFilterRsvp}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All RSVP" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All RSVP</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="coming">Coming</SelectItem>
+              <SelectItem value="not_coming">Not Coming</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterInvite} onValueChange={setFilterInvite}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Invites" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Invites</SelectItem>
+              <SelectItem value="sent">Invite Sent</SelectItem>
+              <SelectItem value="not_sent">Not Sent</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear filters
+            </button>
+          )}
+          <span className="text-sm text-muted-foreground ml-auto">
+            {filtered.length} of {guests.length} guests
+          </span>
+        </div>
       </div>
 
       {/* Selection action bar */}
