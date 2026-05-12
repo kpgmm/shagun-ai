@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { LogOut } from "lucide-react"
+import { HelpCircle, LogOut } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ShagunLogo } from "@/components/ui/shagun-logo"
@@ -38,6 +38,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="text-xl font-bold text-primary">Shagun</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/help"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:block">Help</span>
+            </Link>
             <span className="hidden text-sm text-muted-foreground sm:block">
               {user.name}
             </span>

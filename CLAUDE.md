@@ -61,6 +61,11 @@ Incoming Twilio messages at `POST /api/webhooks/whatsapp` are parsed for RSVP in
 
 Unrecognised replies are silently ignored. Guest lookup uses `invite_sent: true` and sorts by `invite_sent_at` descending to handle guests across multiple events.
 
+### WhatsApp Confirmation
+`_send_confirmation_and_flag(entry_id, entry, event)` in `routers/entries.py` sends a WhatsApp payment confirmation and sets `confirmation_sent: True` in the DB on success. It is called as a `BackgroundTask` from both:
+- `POST /api/events/{event_id}/entries` (manual entry creation, when phone is present)
+- `POST /api/webhooks/razorpay` (Razorpay webhook, imported from `routers.entries`)
+
 ### External HTTP Calls
 The Razorpay Python SDK is **synchronous** — do not use it directly in async handlers. All Razorpay and Twilio calls use `httpx.AsyncClient` directly with Basic Auth (`services/razorpay.py`, `services/whatsapp.py`).
 
@@ -88,14 +93,38 @@ The list activities endpoint (`GET /api/events/{event_id}/activities`) returns a
 ### Entry Edit / Delete (Live Feed)
 The live feed table (`components/dashboard/entry-row-actions.tsx`) renders inline edit and delete buttons on every row. Edit opens a dialog with React Hook Form + Zod; delete requires a `delete_reason` string before confirming. Both update TanStack Query cache optimistically and invalidate `entries-summary`.
 
-### Reports
-`GET /api/events/{event_id}/report/excel` — event-wide Excel workbook:
-- Sheet 1: Full Ledger (includes Activity column when activities exist)
-- Sheet 2: Summary (totals, UPI/cash breakdown)
-- Sheet 3: Village-wise Summary
-- Sheet 4: Activity Breakdown (only when activities exist)
+### Payment Modes
+Three modes are supported: `"cash"`, `"upi"`, `"gift"`.
 
-`GET /api/events/{event_id}/activities/{activity_id}/report/excel` — per-activity workbook (Entry Ledger + Summary sheets).
+- **Cash / UPI**: amount is required and must be > 0. UPI entries may include an optional `utr_number`.
+- **Gift**: amount is optional (defaults to 0). A `gift_item` string (description of what was given, e.g. "Gold ring", "Saree") is the primary field. Gift amounts are included in all financial totals when > 0. The `entries_summary` endpoint returns `count_gift` and `total_gift` alongside the existing UPI/cash fields. Gift entries appear in the live feed with a purple "GIFT" badge; when amount > 0 the cell shows `₹100 · Saree`.
+
+Cross-field validation in `CreateEntryRequest` uses a Pydantic `model_validator(mode="after")` to enforce amount > 0 only for non-gift modes.
+
+### Guest Invitations
+Three invitation flows exist:
+
+1. **Bulk send** — `POST /api/events/{event_id}/guests/send-invites` — sends to all uninvited guests by default. Accepts an optional JSON body `{ "guest_ids": [...] }` to restrict to specific guests.
+2. **Individual send** — `POST /api/events/{event_id}/guests/{guest_id}/send-invite` — queues a single invite as a background task and sets `invite_sent: True` on success.
+3. **Selection-based send** — frontend `GuestsTable` renders checkboxes on every row with a "Select All" header (supports indeterminate state via ref). When any guests are selected, a contextual action bar appears with "Send Invites (N)" which calls the bulk endpoint with the selected `guest_ids`.
+
+### Guest Import
+`POST /api/events/{event_id}/guests/import` copies guests from a source event into the target event. Requires `source_event_id` and an optional `guest_ids` list (omit to import all). Duplicate phones are skipped; RSVP is reset to `"pending"` on all imported guests.
+
+Frontend: `GuestImportDialog` (`components/guests/guest-import-dialog.tsx`) — a reusable dialog with an event dropdown and a checkable guest list (all selected by default). Wired into:
+- **Guests page** — "Import from Event" button
+- **New event creation** — dialog opens automatically after event + activities are created; "Skip" navigates to the event dashboard
+
+`useEffect` dependency in `GuestImportDialog` uses the raw TanStack Query `data` reference (not a `= []` default) to avoid the infinite re-render loop that `data: guests = []` would cause.
+
+### Reports
+`GET /api/events/{event_id}/report/pdf` — event-wide PDF report (ReportLab Platypus):
+- Event details, financial summary box (Total / UPI / Cash / Entries; Gifts box when present), RSVP summary, full entries table
+
+`GET /api/events/{event_id}/activities/{activity_id}/report/pdf` — per-activity PDF report:
+- Activity details, financial summary, entries table
+
+PDF styling: white background, red (#CC2200) headings, green (#16A34A) amounts, light gray (#D1D5DB) grid. Font registration tries Arial (Windows) → DejaVuSans (Linux) → Helvetica fallback for ₹ symbol support. Gift entries show `gift_item` in the Amount column; gift entries with amounts are included in financial totals; a "Gifts" stat cell is added when any gift entries exist.
 
 ### Data Conventions
 - **Phones**: stored as 10-digit strings (strip `+91`, spaces, non-digits everywhere). Phone is unique per event in the `guests` collection (not globally).
@@ -106,7 +135,7 @@ The live feed table (`components/dashboard/entry-row-actions.tsx`) renders inlin
 
 ### Frontend State
 - TanStack Query v5 handles all server state (30s stale time, skip retry on 401)
-- React Hook Form + Zod for all forms
+- React Hook Form + Zod for all forms; cross-field validation uses `superRefine` for mode-dependent amount rules
 - Sonner for toast notifications
 - Route groups: `(auth)` for `/login` and `/register`; `(dashboard)` for everything else — the dashboard layout handles server-side auth redirect
 
@@ -120,7 +149,7 @@ When touching a feature area, read these files together:
 | Events | `routers/events.py`, `services/razorpay.py` | `app/(dashboard)/events/`, `components/events/` |
 | Entries (live) | `routers/entries.py`, `services/socket_manager.py` | `app/(dashboard)/events/[eventId]/page.tsx`, `components/dashboard/live-feed.tsx`, `components/dashboard/entry-row-actions.tsx` |
 | Activities | `routers/activities.py`, `models/activity.py`, `schemas/activity.py` | `app/(dashboard)/events/[eventId]/activities/`, `components/activities/`, `types/activity.ts` |
-| Guests / RSVP | `routers/guests.py`, `routers/webhooks.py` | `app/(dashboard)/events/[eventId]/guests/page.tsx`, `components/guests/` |
+| Guests / RSVP / Invites | `routers/guests.py`, `routers/webhooks.py` | `app/(dashboard)/events/[eventId]/guests/page.tsx`, `components/guests/` |
 | Webhooks | `routers/webhooks.py`, `services/whatsapp.py` | N/A |
 | Reports | `routers/reports.py`, `services/report_generator.py` | `app/(dashboard)/events/[eventId]/report/page.tsx` |
 
@@ -128,7 +157,6 @@ When touching a feature area, read these files together:
 
 - **WhatsApp Report Delivery** — report page button fires `toast.info` stub; no `POST /api/events/{event_id}/report/whatsapp` endpoint exists
 - **Razorpay QR close on event completion** — `close_upi_qr()` in `services/razorpay.py` is implemented but never called when event status → `"completed"`
-- **`confirmation_sent` flag** — `send_confirmation` is called on webhook entries but never sets `confirmation_sent: True` in the DB
 - **Event edit UI** — `PATCH /api/events/{event_id}` exists on backend; no edit form in the frontend event dashboard
 - **Cookie `secure` flag** — hardcoded `False` in `routers/auth.py`; must be set `True` in production
 - **Offline entry queuing** — offline banner shown on entry page but form submission has no local queue/retry

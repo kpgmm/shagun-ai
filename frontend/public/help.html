@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shagun AI — Help Center</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: #fdfaf6;
+      color: #1c1917;
+      line-height: 1.65;
+    }
+    a { color: #f97316; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; }
+
+    /* ── Color tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --primary:       #f97316;
+      --primary-dark:  #ea6c0a;
+      --primary-light: #fff7ed;
+      --surface:       #ffffff;
+      --border:        #e5e7eb;
+      --muted:         #6b7280;
+      --text:          #1c1917;
+      --text-light:    #57534e;
+      --success:       #16a34a;
+      --warning:       #d97706;
+      --danger:        #dc2626;
+      --info:          #2563eb;
+      --radius:        10px;
+      --shadow:        0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      --sidebar-w:     260px;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────────────── */
+    .app-shell { display: flex; min-height: 100vh; }
+
+    /* ── Top bar (mobile) ─────────────────────────────────────────────────── */
+    .topbar {
+      display: none;
+      position: sticky; top: 0; z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: .75rem 1rem;
+      align-items: center; gap: .75rem;
+    }
+    .topbar-logo { font-size: 1.4rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: .4rem; }
+    .hamburger {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      padding: .4rem; border-radius: 6px; color: var(--text);
+    }
+    .hamburger:hover { background: #f3f4f6; }
+    .hamburger svg { display: block; }
+
+    /* ── Sidebar ──────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; overflow-x: hidden;
+      display: flex; flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 1.25rem 1.2rem .75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--primary);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .sidebar-tagline { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+    .sidebar-nav { padding: .75rem .6rem 1.5rem; flex: 1; }
+    .nav-group { margin-bottom: 1.25rem; }
+    .nav-group-title {
+      font-size: .68rem; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 0 .6rem .4rem;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: .55rem;
+      padding: .48rem .6rem;
+      border-radius: 7px;
+      font-size: .875rem; color: var(--text-light);
+      cursor: pointer; transition: background .15s, color .15s;
+      text-decoration: none;
+    }
+    .nav-link:hover { background: var(--primary-light); color: var(--primary); text-decoration: none; }
+    .nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .nav-link .icon { font-size: 1rem; width: 1.1rem; text-align: center; }
+
+    /* ── Main content ─────────────────────────────────────────────────────── */
+    .main { flex: 1; overflow-y: auto; }
+    .content-wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+    /* ── Hero ─────────────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #fb923c 100%);
+      color: #fff; border-radius: 14px;
+      padding: 2.2rem 2rem; margin-bottom: 2.5rem;
+      box-shadow: 0 4px 20px rgba(249,115,22,.3);
+    }
+    .hero-title { font-size: 1.9rem; font-weight: 700; margin-bottom: .5rem; }
+    .hero-sub { font-size: 1rem; opacity: .9; max-width: 480px; }
+    .hero-badge {
+      display: inline-block; background: rgba(255,255,255,.2);
+      border-radius: 20px; padding: .2rem .75rem; font-size: .8rem;
+      margin-bottom: .75rem;
+    }
+
+    /* ── Section ──────────────────────────────────────────────────────────── */
+    .section { margin-bottom: 3rem; scroll-margin-top: 1.5rem; }
+    .section-title {
+      font-size: 1.4rem; font-weight: 700; color: var(--text);
+      padding-bottom: .5rem; border-bottom: 2px solid var(--primary-light);
+      margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .section-title .sec-icon { color: var(--primary); }
+
+    h3 { font-size: 1.05rem; font-weight: 600; margin: 1.4rem 0 .5rem; color: var(--text); }
+    p { margin-bottom: .85rem; color: var(--text-light); }
+    li { margin-bottom: .4rem; color: var(--text-light); }
+    ul, ol { padding-left: 1.4rem; margin-bottom: .85rem; }
+
+    /* ── Cards grid ───────────────────────────────────────────────────────── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.1rem 1rem;
+      box-shadow: var(--shadow); transition: box-shadow .2s, transform .2s;
+    }
+    .feature-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.1); transform: translateY(-2px); }
+    .feature-card .fc-icon { font-size: 1.6rem; margin-bottom: .5rem; }
+    .feature-card .fc-title { font-size: .95rem; font-weight: 600; margin-bottom: .25rem; color: var(--text); }
+    .feature-card .fc-desc { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── Steps ────────────────────────────────────────────────────────────── */
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex; gap: 1rem;
+      margin-bottom: 1.2rem; align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      min-width: 1.9rem; height: 1.9rem;
+      background: var(--primary); color: #fff;
+      border-radius: 50%; font-size: .8rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: .1rem; flex-shrink: 0;
+    }
+    .steps li .step-body { flex: 1; }
+    .steps li .step-title { font-weight: 600; color: var(--text); margin-bottom: .2rem; }
+    .steps li .step-desc { font-size: .875rem; color: var(--text-light); margin: 0; }
+
+    /* ── Callout boxes ────────────────────────────────────────────────────── */
+    .callout {
+      border-radius: var(--radius); padding: .9rem 1.1rem;
+      margin: 1rem 0; display: flex; gap: .7rem; align-items: flex-start;
+      font-size: .875rem;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
+    .callout-body { flex: 1; color: var(--text-light); }
+    .callout-body strong { color: var(--text); }
+    .callout.tip    { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .callout.warning { background: #fffbeb; border: 1px solid #fde68a; }
+    .callout.info   { background: #eff6ff; border: 1px solid #bfdbfe; }
+    .callout.danger { background: #fef2f2; border: 1px solid #fecaca; }
+
+    /* ── Table ────────────────────────────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: .875rem; margin-bottom: 1rem; }
+    .data-table th {
+      background: var(--primary-light); color: var(--primary);
+      font-weight: 600; text-align: left;
+      padding: .6rem .9rem; border: 1px solid var(--border);
+    }
+    .data-table td { padding: .6rem .9rem; border: 1px solid var(--border); color: var(--text-light); }
+    .data-table tr:nth-child(even) td { background: #fafafa; }
+
+    /* ── Badge ────────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block; padding: .15rem .55rem; border-radius: 20px;
+      font-size: .75rem; font-weight: 600;
+    }
+    .badge-orange  { background: #fff7ed; color: var(--primary); }
+    .badge-green   { background: #f0fdf4; color: var(--success); }
+    .badge-blue    { background: #eff6ff; color: var(--info); }
+    .badge-purple  { background: #faf5ff; color: #7c3aed; }
+    .badge-gray    { background: #f3f4f6; color: var(--muted); }
+
+    /* ── Code inline ──────────────────────────────────────────────────────── */
+    code {
+      background: #f3f4f6; border-radius: 5px;
+      padding: .1rem .4rem; font-size: .83rem;
+      font-family: "SF Mono", Consolas, monospace; color: #e11d48;
+    }
+
+    /* ── FAQ ──────────────────────────────────────────────────────────────── */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: .6rem; overflow: hidden;
+    }
+    .faq-question {
+      width: 100%; text-align: left; background: var(--surface);
+      border: none; cursor: pointer;
+      padding: .9rem 1.1rem;
+      font-size: .9rem; font-weight: 600; color: var(--text);
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background .15s;
+    }
+    .faq-question:hover { background: var(--primary-light); }
+    .faq-question .arrow { transition: transform .25s; color: var(--muted); font-size: .8rem; }
+    .faq-question.open { color: var(--primary); background: var(--primary-light); }
+    .faq-question.open .arrow { transform: rotate(180deg); color: var(--primary); }
+    .faq-answer {
+      display: none; padding: .75rem 1.1rem 1rem;
+      font-size: .875rem; color: var(--text-light);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      line-height: 1.65;
+    }
+    .faq-answer.open { display: block; }
+
+    /* ── Workflow example ─────────────────────────────────────────────────── */
+    .workflow {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.2rem 1.3rem;
+      margin-bottom: 1.2rem; box-shadow: var(--shadow);
+    }
+    .workflow-title {
+      font-weight: 700; font-size: .95rem; color: var(--text);
+      margin-bottom: .75rem; display: flex; align-items: center; gap: .4rem;
+    }
+    .workflow-title span { color: var(--primary); }
+
+    /* ── Support card ─────────────────────────────────────────────────────── */
+    .support-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .support-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.2rem 1rem; text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .support-card .sc-icon { font-size: 1.8rem; margin-bottom: .5rem; }
+    .support-card .sc-title { font-size: .9rem; font-weight: 600; margin-bottom: .25rem; }
+    .support-card .sc-desc { font-size: .8rem; color: var(--muted); }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    footer {
+      margin-top: 2rem; padding: 1.5rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center; font-size: .8rem; color: var(--muted);
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .topbar { display: flex; }
+      .sidebar {
+        position: fixed; top: 0; left: 0; height: 100vh;
+        z-index: 100; transform: translateX(-100%);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+        box-shadow: 4px 0 20px rgba(0,0,0,.12);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,.35); z-index: 99;
+      }
+      .sidebar-overlay.open { display: block; }
+      .content-wrap { padding: 1.5rem 1rem 3rem; }
+      .hero { padding: 1.5rem 1.2rem; }
+      .hero-title { font-size: 1.4rem; }
+      .card-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mobile top bar -->
+<div class="topbar" id="topbar">
+  <div class="topbar-logo">🌸 Shagun AI</div>
+  <button class="hamburger" id="menuToggle" aria-label="Open menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+</div>
+
+<div class="app-shell">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="overlay"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🌸 Shagun AI</div>
+      <div class="sidebar-tagline">Help Center — User Guide</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-title">Getting Started</div>
+        <a class="nav-link active" href="#overview"><span class="icon">📖</span> Overview</a>
+        <a class="nav-link" href="#getting-started"><span class="icon">🚀</span> Getting Started</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Core Features</div>
+        <a class="nav-link" href="#events"><span class="icon">🎉</span> Events</a>
+        <a class="nav-link" href="#activities"><span class="icon">📅</span> Activities</a>
+        <a class="nav-link" href="#entries"><span class="icon">📝</span> Recording Entries</a>
+        <a class="nav-link" href="#guests"><span class="icon">👥</span> Guest Management</a>
+        <a class="nav-link" href="#invitations"><span class="icon">💬</span> WhatsApp Invitations</a>
+        <a class="nav-link" href="#reports"><span class="icon">📊</span> Reports</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Reference</div>
+        <a class="nav-link" href="#workflows"><span class="icon">🔄</span> Example Workflows</a>
+        <a class="nav-link" href="#best-practices"><span class="icon">✅</span> Best Practices</a>
+        <a class="nav-link" href="#faq"><span class="icon">❓</span> FAQs</a>
+        <a class="nav-link" href="#troubleshooting"><span class="icon">🔧</span> Troubleshooting</a>
+        <a class="nav-link" href="#support"><span class="icon">🙏</span> Support</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main" id="mainContent">
+    <div class="content-wrap">
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-badge">🌸 User Guide — v1.0</div>
+        <div class="hero-title">Welcome to Shagun AI Help Center</div>
+        <div class="hero-sub">Everything you need to track shagun entries, manage guests, send WhatsApp invitations, and generate reports for your events.</div>
+      </div>
+
+      <!-- ── OVERVIEW ───────────────────────────────────────────────────── -->
+      <section class="section" id="overview">
+        <div class="section-title"><span class="sec-icon">📖</span> Application Overview</div>
+        <p><strong>Shagun AI</strong> is a digital platform designed for Indian families and event organizers to manage <em>shagun</em> — the traditional gift of money given at weddings, naamkarans, griha pravesh ceremonies, and pujas. Instead of manually recording cash and UPI payments in notebooks, Shagun AI gives you a real-time digital ledger with guest management, WhatsApp notifications, and PDF reports — all in one place.</p>
+
+        <div class="card-grid">
+          <div class="feature-card"><div class="fc-icon">🎉</div><div class="fc-title">Event Management</div><div class="fc-desc">Create and manage multiple events. Activate them on the day and mark them complete when done.</div></div>
+          <div class="feature-card"><div class="fc-icon">📝</div><div class="fc-title">Live Entry Feed</div><div class="fc-desc">Record Cash, UPI, and Gift entries in real time. Auto-matches guests by phone number.</div></div>
+          <div class="feature-card"><div class="fc-icon">👥</div><div class="fc-title">Guest List</div><div class="fc-desc">Maintain a guest list with RSVP tracking. Import guests from previous events in one click.</div></div>
+          <div class="feature-card"><div class="fc-icon">📅</div><div class="fc-title">Activities</div><div class="fc-desc">Break your event into sub-events (Mehndi, Garba, Reception) and track entries per activity.</div></div>
+          <div class="feature-card"><div class="fc-icon">💬</div><div class="fc-title">WhatsApp Invites</div><div class="fc-desc">Send personalised WhatsApp invitations and payment confirmations via Twilio.</div></div>
+          <div class="feature-card"><div class="fc-icon">📊</div><div class="fc-title">PDF Reports</div><div class="fc-desc">Download a professionally formatted PDF summary for the whole event or per activity.</div></div>
+        </div>
+
+        <h3>Who is this for?</h3>
+        <ul>
+          <li><strong>Event hosts</strong> — families organising weddings, naming ceremonies, or religious events</li>
+          <li><strong>Operators</strong> — a trusted person at the entrance recording incoming guests and payments</li>
+          <li><strong>Family administrators</strong> — anyone who wants a clean, searchable record of shagun received</li>
+        </ul>
+      </section>
+
+      <!-- ── GETTING STARTED ────────────────────────────────────────────── -->
+      <section class="section" id="getting-started">
+        <div class="section-title"><span class="sec-icon">🚀</span> Getting Started</div>
+
+        <h3>Creating your account</h3>
+        <ol class="steps">
+          <li><div class="step-body"><div class="step-title">Register</div><div class="step-desc">Go to the app and click <strong>Register</strong>. Enter your name, a 10-digit mobile number, and a password.</div></div></li>
+          <li><div class="step-body"><div class="step-title">Log in</div><div class="step-desc">Use your mobile number and password to sign in. You will be taken to <strong>My Events</strong> automatically.</div></div></li>
+          <li><div class="step-body"><div class="step-title">Create your first event</div><div class="step-desc">Click <strong>New Event</strong>, fill in the event details, then add at least one activity to proceed.</div></div></li>
+        </ol>
+
+        <div class="callout info">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body"><strong>First-time users:</strong> Your event starts in <em>Draft</em> status. You must click <strong>Activate Event</strong> on the dashboard before you can receive Razorpay UPI payments linked to that event.</div>
+        </div>
+      </section>
+
+      <!-- ── EVENTS ─────────────────────────────────────────────────────── -->
+      <section class="section" id="events">
+        <div class="section-title"><span class="sec-icon">🎉</span> Events</div>
+        <p>An <strong>Event</strong> is the top-level container — a wedding, naamkaran, or puja. Everything (guests, entries, activities, reports) belongs to one event.</p>
+
+        <h3>Creating an Event</h3>
+        <ol class="steps">
+          <li><div class="step-body"><div class="step-title">Click "New Event"</div><div class="step-desc">Found on the My Events page, top-right.</div></div></li>
+          <li><div class="step-body"><div class="step-title">Fill Event Details (Step 1)</div><div class="step-desc">Enter event name, type, date, host name, village/city, UPI ID, and WhatsApp number.</div></div></li>
+          <li><div class="step-body"><div class="step-title">Add Activities (Step 2)</div><div class="step-desc">Add at least one activity (e.g., Reception). You can add more later. Click <strong>Create Event →</strong>.</div></div></li>
+          <li><div class="step-body"><div class="step-title">Import Guests (Optional)</div><div class="step-desc">After creation, a dialog offers to import guests from a previous event. Select guests or click <strong>Skip</strong>.</div></div></li>
+        </ol>
+
+        <h3>Event Statuses</h3>
+        <table class="data-table">
+          <thead><tr><th>Status</th><th>Meaning</th><th>What you can do</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-gray">Draft</span></td><td>Event set up but not yet running</td><td>Add guests, activities. Click Activate to go live.</td></tr>
+            <tr><td><span class="badge badge-green">Active</span></td><td>Event is live</td><td>Record entries, send invites, view live feed.</td></tr>
+            <tr><td><span class="badge badge-blue">Completed</span></td><td>Event is over</td><td>View entries and download final report.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body"><strong>Tip:</strong> Click <strong>Mark Completed</strong> when the event ends. The app will redirect you to the Report page so you can download the final PDF immediately.</div>
+        </div>
+      </section>
+
+      <!-- ── ACTIVITIES ─────────────────────────────────────────────────── -->
+      <section class="section" id="activities">
+        <div class="section-title"><span class="sec-icon">📅</span> Activities</div>
+        <p>Activities are <strong>sub-events within an event</strong> — e.g., Mehndi, Baraat, Garba, Reception. Every event must have at least one activity. You can track entries, guests, and generate a separate PDF per activity.</p>
+
+        <h3>Activity Types</h3>
+        <p>Choose from preset types — <em>Mehndi, Sangeet, Garba, Baraat, Wedding, Reception, Naamkaran, Griha Pravesh, Puja</em> — or select <strong>Custom</strong> and type your own name.</p>
+
+        <h3>Activity Statuses</h3>
+        <table class="data-table">
+          <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-gray">Upcoming</span></td><td>Not yet started</td></tr>
+            <tr><td><span class="badge badge-green">Active</span></td><td>Currently running — Razorpay webhook auto-assigns entries here when only one activity is active</td></tr>
+            <tr><td><span class="badge badge-blue">Completed</span></td><td>Finished; entries are locked to this activity</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Assigning Guests to an Activity</h3>
+        <p>Open an activity → go to the <strong>Guests</strong> tab → click <strong>Manage Guests</strong>. Select which guests are attending this specific sub-event. This is informational only — it does not restrict who can make a payment.</p>
+
+        <div class="callout warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-body"><strong>Note:</strong> You cannot delete an activity that has entries linked to it. Delete or reassign those entries first.</div>
+        </div>
+      </section>
+
+      <!-- ── ENTRIES ────────────────────────────────────────────────────── -->
+      <section class="section" id="entries">
+        <div class="section-title"><span class="sec-icon">📝</span> Recording Entries</div>
+        <p>An entry records a single payment or gift from one guest or party. Navigate to <strong>Event Dashboard → Record Entry</strong>, or open an activity and use the entry form there.</p>
+
+        <h3>Payment Modes</h3>
+        <table class="data-table">
+          <thead><tr><th>Mode</th><th>Required Fields</th><th>Optional Fields</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-gray">💵 Cash</span></td>
+              <td>Name, Village, Amount</td>
+              <td>Phone, Notes</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-blue">📱 UPI</span></td>
+              <td>Name, Village, Amount</td>
+              <td>Phone, UTR Number, Notes</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-purple">🎁 Gift</span></td>
+              <td>Name, Village, Gift Item (description)</td>
+              <td>Estimated Value (₹), Notes</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body"><strong>Gift entries:</strong> The amount is optional for gifts. If you enter an estimated value (e.g., ₹500 for a gold ring), it <strong>will</strong> be included in the total collection. The gift item description (e.g., "Gold ring", "Saree") appears in the Amount column of the live feed.</div>
+        </div>
+
+        <h3>Guest Autocomplete</h3>
+        <p>When you start typing a name in the <strong>Guest Name</strong> field, the app searches your guest list and shows matches. Clicking a suggestion fills in the name, village, and phone automatically.</p>
+
+        <h3>Amount Presets</h3>
+        <p>For Cash and UPI modes, quick-select common shagun amounts — ₹101, ₹201, ₹501, ₹1,001, ₹1,100, ₹2,100, ₹5,001.</p>
+
+        <h3>Razorpay UPI (Automatic)</h3>
+        <p>When a guest scans the event's Razorpay QR code and pays, the entry is created <strong>automatically</strong> — no manual input needed. The system also tries to match the phone number to a guest in your list.</p>
+
+        <h3>Editing and Deleting Entries</h3>
+        <p>In the Live Entry Feed, each row has <strong>edit (✏️)</strong> and <strong>delete (🗑)</strong> icons. Deleting requires a reason (e.g., "Duplicate entry"). Deleted entries are archived, not permanently removed.</p>
+      </section>
+
+      <!-- ── GUESTS ─────────────────────────────────────────────────────── -->
+      <section class="section" id="guests">
+        <div class="section-title"><span class="sec-icon">👥</span> Guest Management</div>
+        <p>Navigate to <strong>Event Dashboard → Guests</strong> to manage your guest list. The guest list is used for autocomplete in the entry form, RSVP tracking, and WhatsApp invitations.</p>
+
+        <h3>Adding Guests</h3>
+        <ul>
+          <li><strong>Add Guest</strong> — Add one guest at a time with name, phone, village, and relation side.</li>
+          <li><strong>Bulk Upload</strong> — Upload an Excel (.xlsx) or CSV file. The app lets you map your file's columns to the required fields before importing.</li>
+          <li><strong>Import from Event</strong> — Copy the guest list from one of your previous events. Select which guests to import (all are pre-selected). Duplicate phone numbers are automatically skipped.</li>
+        </ul>
+
+        <h3>Relation Side</h3>
+        <table class="data-table">
+          <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Mama Pakkhu</td><td>Guests from the maternal family side</td></tr>
+            <tr><td>Kaka Pakkhu</td><td>Guests from the paternal family side</td></tr>
+            <tr><td>Friend</td><td>Personal friends</td></tr>
+            <tr><td>Colleague</td><td>Work colleagues</td></tr>
+            <tr><td>Other</td><td>Any other category</td></tr>
+          </tbody>
+        </table>
+
+        <h3>RSVP Tracking</h3>
+        <p>The top of the Guests page shows a summary card: <strong>Total Invited / Coming / Not Coming / No Response</strong>. Guests reply to the WhatsApp invite with <code>HAAN</code> (coming) or <code>NA</code> (not coming), and the app updates their RSVP automatically.</p>
+
+        <h3>Filtering</h3>
+        <p>Use the <strong>All Relations</strong> and <strong>All RSVP</strong> dropdowns to filter the guest table. Filters can be combined.</p>
+      </section>
+
+      <!-- ── INVITATIONS ────────────────────────────────────────────────── -->
+      <section class="section" id="invitations">
+        <div class="section-title"><span class="sec-icon">💬</span> WhatsApp Invitations</div>
+        <p>Shagun AI sends personalised WhatsApp messages via Twilio. Three types of messages are sent:</p>
+
+        <table class="data-table">
+          <thead><tr><th>Message Type</th><th>Trigger</th><th>Content</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Invite</strong></td><td>You click Send Invite</td><td>Event name, date, village, RSVP instructions (reply HAAN / NA)</td></tr>
+            <tr><td><strong>Payment Confirmation</strong></td><td>Entry created with a phone number</td><td>Confirms the amount received</td></tr>
+            <tr><td><strong>RSVP Acknowledgment</strong></td><td>Guest replies HAAN or NA</td><td>Thank-you message</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Sending Invitations</h3>
+        <p>Three ways to send invites from the Guests page:</p>
+        <ul>
+          <li><strong>Send Invites (top button)</strong> — Sends to all guests who have not yet received an invite.</li>
+          <li><strong>Per-row Send icon (✈)</strong> — Sends to one specific guest. A blue icon means invite was already sent (re-send allowed).</li>
+          <li><strong>Selection-based</strong> — Tick the checkboxes on individual rows, then click <strong>Send Invites (N)</strong> in the action bar that appears above the table.</li>
+        </ul>
+
+        <h3>Accepted RSVP Reply Keywords</h3>
+        <table class="data-table">
+          <thead><tr><th>Coming</th><th>Not Coming</th></tr></thead>
+          <tbody>
+            <tr><td><code>HAAN</code>, <code>YES</code>, <code>1</code>, <code>HA</code>, <code>HAN</code></td><td><code>NA</code>, <code>NO</code>, <code>2</code>, <code>NAHI</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-body"><strong>Twilio requirement:</strong> WhatsApp messaging requires a configured Twilio account. Contact your administrator if invitations are not being sent.</div>
+        </div>
+      </section>
+
+      <!-- ── REPORTS ────────────────────────────────────────────────────── -->
+      <section class="section" id="reports">
+        <div class="section-title"><span class="sec-icon">📊</span> Reports</div>
+        <p>Navigate to <strong>Event Dashboard → Report</strong>. Two PDF reports are available:</p>
+
+        <h3>Event Report (Full PDF)</h3>
+        <ul>
+          <li>Event details (date, host, village, status)</li>
+          <li>Financial summary — Total Collected, UPI breakdown, Cash breakdown, Gift count and value</li>
+          <li>Guest RSVP summary (if guests were invited)</li>
+          <li>Complete ledger — all entries in a table with name, village, amount, mode, and activity</li>
+        </ul>
+
+        <h3>Activity Report (Per-Activity PDF)</h3>
+        <p>Open an Activity → <strong>Report</strong> tab → <strong>Download Activity Report (PDF)</strong>. This is scoped to only the entries for that activity.</p>
+
+        <div class="callout tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body"><strong>Gift entries in reports:</strong> Gift rows show the item description (e.g., "Saree") in the Amount column. If an estimated value was entered, it is included in the Total Collected figure.</div>
+        </div>
+      </section>
+
+      <!-- ── WORKFLOWS ──────────────────────────────────────────────────── -->
+      <section class="section" id="workflows">
+        <div class="section-title"><span class="sec-icon">🔄</span> Example Workflows</div>
+
+        <div class="workflow">
+          <div class="workflow-title">🎊 <span>Workflow 1:</span> Setting up a Wedding Event</div>
+          <ol class="steps">
+            <li><div class="step-body"><div class="step-title">Create the event</div><div class="step-desc">New Event → fill details → add activities (Mehndi, Baraat, Reception) → click Create Event.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Import or add guests</div><div class="step-desc">Use "Import from Event" if guests are same as last year, or upload an Excel file with the new list.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Send invitations</div><div class="step-desc">Go to Guests page → Send Invites (uninvited only). Guests receive a WhatsApp message with date, venue, and RSVP link.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Activate on the event day</div><div class="step-desc">Dashboard → Activate Event. The Razorpay QR is now live for digital payments.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Record entries throughout the day</div><div class="step-desc">Operator opens Record Entry. Type the guest name — autocomplete fills village/phone. Select Cash/UPI/Gift and enter amount. Save.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Complete and download report</div><div class="step-desc">Dashboard → Mark Completed → Download PDF Report.</div></div></li>
+          </ol>
+        </div>
+
+        <div class="workflow">
+          <div class="workflow-title">💵 <span>Workflow 2:</span> Recording a Gift Entry</div>
+          <ol class="steps">
+            <li><div class="step-body"><div class="step-title">Open Record Entry</div><div class="step-desc">Navigate to your active event → Record Entry.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Type the guest's name</div><div class="step-desc">Start typing — if the guest is in your list, select from the dropdown.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Select 🎁 Gift</div><div class="step-desc">Click the Gift button in the Payment Mode section.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Enter gift details</div><div class="step-desc">Type what was gifted in the <em>Gift Item / Description</em> field (e.g., "Silver coins"). Optionally enter an estimated value.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Save</div><div class="step-desc">Click Save Entry. The entry appears in the live feed with a purple GIFT badge.</div></div></li>
+          </ol>
+        </div>
+
+        <div class="workflow">
+          <div class="workflow-title">📨 <span>Workflow 3:</span> Selection-based Invite Send</div>
+          <ol class="steps">
+            <li><div class="step-body"><div class="step-title">Go to Guests page</div><div class="step-desc">Event Dashboard → Guests.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Filter if needed</div><div class="step-desc">Use the Relation or RSVP filter to narrow the list (e.g., "No Response" only).</div></div></li>
+            <li><div class="step-body"><div class="step-title">Select guests</div><div class="step-desc">Click the checkbox in the header to select all visible guests, or tick individual rows.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Send</div><div class="step-desc">Click <strong>Send Invites (N)</strong> in the action bar. Invites are queued and sent in the background.</div></div></li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ── BEST PRACTICES ─────────────────────────────────────────────── -->
+      <section class="section" id="best-practices">
+        <div class="section-title"><span class="sec-icon">✅</span> Best Practices</div>
+        <ul>
+          <li><strong>Add guests before the event day</strong> — autocomplete only works if the guest is already in your list. Upload your guest list in advance.</li>
+          <li><strong>Always enter phone numbers</strong> — phone numbers enable guest matching for Razorpay UPI payments and automatic WhatsApp confirmations.</li>
+          <li><strong>Activate only one activity at a time</strong> — when exactly one activity is Active, Razorpay webhook payments are automatically assigned to it.</li>
+          <li><strong>Use Gift mode for physical items</strong> — even if you do not know the value, record the item description (e.g., "Gold necklace") for a complete record.</li>
+          <li><strong>Download the PDF before closing the event</strong> — once you mark an event Completed, the Report page shows the final totals. Download it while everything is fresh.</li>
+          <li><strong>Always provide a reason when deleting entries</strong> — deletion reasons appear in the audit trail, helping you reconcile records later.</li>
+          <li><strong>Import guests from last year's event</strong> — use "Import from Event" to reuse your guest list across family events rather than re-entering names each time.</li>
+        </ul>
+      </section>
+
+      <!-- ── FAQ ────────────────────────────────────────────────────────── -->
+      <section class="section" id="faq">
+        <div class="section-title"><span class="sec-icon">❓</span> Frequently Asked Questions</div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Can I record entries without adding guests to the guest list?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Yes. You can type any name and village directly in the entry form without selecting from the guest list. The entry will be marked as an "unknown guest" (highlighted in amber in the feed). However, adding guests to the list first enables autocomplete and RSVP tracking.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            What happens if a guest pays via UPI QR code at the venue?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">If the event is Active and a Razorpay QR code is set up, the payment is captured automatically — a new entry appears in the live feed without any manual input. The system tries to match the payer's phone to your guest list. A WhatsApp confirmation is sent to the guest automatically.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Is the amount required for a Gift entry?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">No. The amount is optional for Gift mode. If you enter an estimated value, it is included in the Total Collected. If you leave it at ₹0, the gift is recorded as a purely descriptive item and does not affect financial totals.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Can I have the same guest list for multiple events?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Yes. Use the <strong>Import from Event</strong> button on the Guests page (or the dialog that appears after creating a new event). Select the source event, choose which guests to copy, and they are added to the new event with RSVP reset to Pending.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            I accidentally deleted an entry. Can I recover it?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Deleted entries are soft-deleted — they are not permanently removed from the database. Contact your administrator to restore a deleted entry. The deletion reason you provided is stored alongside it for audit purposes.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Why does the live feed show a guest entry highlighted in amber?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Amber highlighting means the entry was created for a guest whose phone number was not found in your guest list (an "unknown guest"). This commonly happens with Razorpay UPI payments from guests you haven't added to the list. You can edit the entry to add the guest's name and village.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Why do WhatsApp messages show as undelivered?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">WhatsApp messages go through Twilio. Delivery can fail if: (1) the recipient's number is not on WhatsApp, (2) the Twilio sandbox session has expired and the guest hasn't opted in, or (3) Twilio credentials are not configured. Contact your administrator to check the Twilio configuration.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Can I add activities after the event is already active?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Yes. You can add, edit, and delete activities at any time while the event is active. Activities can only be deleted if they have no entries linked to them.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            The UTR number field — is it mandatory for UPI entries?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">No, UTR is optional. It is a reference number from the UPI transaction that helps in reconciliation. For Razorpay auto-entries, the UTR is captured automatically. For manual UPI entries, entering it is recommended but not required.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            How do I use the live feed filters?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">The live feed supports: search by name/village, mode filter (All / Cash / UPI / Gift), activity filter, and min/max amount range. All filters work together. Click <strong>Clear</strong> to reset all filters at once.</div>
+        </div>
+      </section>
+
+      <!-- ── TROUBLESHOOTING ────────────────────────────────────────────── -->
+      <section class="section" id="troubleshooting">
+        <div class="section-title"><span class="sec-icon">🔧</span> Troubleshooting</div>
+
+        <h3>Entry form shows "Amount must be positive"</h3>
+        <p>This error appears for Cash or UPI entries when the amount is 0 or empty. Enter a positive amount, or switch to <strong>Gift</strong> mode if this is a physical gift with no monetary value.</p>
+
+        <h3>Guest autocomplete not showing suggestions</h3>
+        <p>Suggestions appear only after typing at least 2 characters. The guest must already be added to the guest list for this event. Also ensure the dropdown is not already closed — click the name field again after typing.</p>
+
+        <h3>Live feed not updating in real time</h3>
+        <p>The live feed uses a WebSocket connection (shown by the green dot). If it shows <em>"Connecting…"</em>:</p>
+        <ul>
+          <li>Check your internet connection.</li>
+          <li>Refresh the page — the connection re-establishes on page load.</li>
+          <li>Entries saved by other operators will appear the next time the page loads if WebSocket is unavailable.</li>
+        </ul>
+
+        <h3>PDF report download does not start</h3>
+        <ul>
+          <li>Check that your browser is not blocking pop-ups — the PDF opens in a new tab.</li>
+          <li>Ensure the event has at least one entry; an empty report is still generated but shows no data.</li>
+        </ul>
+
+        <h3>Offline banner appears ("No internet connection")</h3>
+        <p>The app detected that your device is offline. Entries entered while offline <strong>will not be saved</strong>. Wait for the connection to restore (the banner disappears automatically), then re-enter the data.</p>
+
+        <div class="callout danger">
+          <span class="callout-icon">🚫</span>
+          <div class="callout-body"><strong>Important:</strong> Do not close the browser tab while an entry is being submitted. If you see "Saving…", wait for the confirmation before moving away.</div>
+        </div>
+
+        <h3>Activity deletion blocked ("Activity has entries")</h3>
+        <p>You cannot delete an activity that has payment entries linked to it. Edit those entries to remove the activity link, or delete the entries themselves (with a reason), then retry the activity deletion.</p>
+
+        <h3>Duplicate phone number error when adding a guest</h3>
+        <p>Each phone number can appear only once per event. If you get this error, the guest is already in your list — use the search/filter to find them. If you're importing from another event, duplicates are automatically skipped.</p>
+      </section>
+
+      <!-- ── SUPPORT ────────────────────────────────────────────────────── -->
+      <section class="section" id="support">
+        <div class="section-title"><span class="sec-icon">🙏</span> Contact &amp; Support</div>
+        <p>If you encounter an issue not covered in this guide, or need help with event setup, reach out through the channels below.</p>
+
+        <div class="support-grid">
+          <div class="support-card">
+            <div class="sc-icon">💬</div>
+            <div class="sc-title">WhatsApp Support</div>
+            <div class="sc-desc">Message the host's WhatsApp number configured in your event settings for real-time assistance during the event.</div>
+          </div>
+          <div class="support-card">
+            <div class="sc-icon">🌐</div>
+            <div class="sc-title">Administrator</div>
+            <div class="sc-desc">Contact your Shagun AI administrator for account issues, Twilio/Razorpay configuration, or data recovery requests.</div>
+          </div>
+          <div class="support-card">
+            <div class="sc-icon">📖</div>
+            <div class="sc-title">This Guide</div>
+            <div class="sc-desc">Bookmark this Help page and refer to the FAQ and Troubleshooting sections before raising a support request.</div>
+          </div>
+        </div>
+
+        <div class="callout tip" style="margin-top:1.5rem">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body">When reporting an issue, please include: the event name, what you were trying to do, and any error message shown on screen. This helps resolve issues faster.</div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer>
+        <p>🌸 <strong>Shagun AI</strong> — Digital Shagun Management Platform</p>
+        <p style="margin-top:.4rem">Built with care for Indian families &amp; events. This help guide was generated from the application.</p>
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  /* ── FAQ toggle ───────────────────────────────────────────────────────── */
+  function toggleFaq(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = btn.classList.contains("open");
+    // Close all
+    document.querySelectorAll(".faq-question.open").forEach(q => {
+      q.classList.remove("open");
+      q.nextElementSibling.classList.remove("open");
+    });
+    // Open this one if it wasn't open
+    if (!isOpen) {
+      btn.classList.add("open");
+      answer.classList.add("open");
+    }
+  }
+
+  /* ── Sidebar navigation active state ─────────────────────────────────── */
+  const navLinks = document.querySelectorAll(".nav-link");
+  const sections = document.querySelectorAll(".section");
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove("active"));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add("active");
+      }
+    });
+  }, { threshold: 0.25 });
+
+  sections.forEach(s => observer.observe(s));
+
+  /* ── Mobile sidebar ───────────────────────────────────────────────────── */
+  const sidebar   = document.getElementById("sidebar");
+  const overlay   = document.getElementById("overlay");
+  const menuToggle = document.getElementById("menuToggle");
+
+  function openSidebar()  { sidebar.classList.add("open"); overlay.classList.add("open"); }
+  function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("open"); }
+
+  menuToggle.addEventListener("click", openSidebar);
+  overlay.addEventListener("click", closeSidebar);
+  navLinks.forEach(l => l.addEventListener("click", closeSidebar));
+</script>
+</body>
+</html>
