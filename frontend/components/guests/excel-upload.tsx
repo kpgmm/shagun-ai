@@ -13,11 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { api, ApiError } from "@/lib/api"
 
 const RELATION_OPTIONS = [
-  { value: "mama_pakkhu", label: "Mama Pakkhu" },
-  { value: "kaka_pakkhu", label: "Kaka Pakkhu" },
-  { value: "friend", label: "Friend" },
-  { value: "colleague", label: "Colleague" },
-  { value: "other", label: "Other" },
+  { value: "close_family",       label: "Close Family & Relatives" },
+  { value: "social_obligations", label: "Social Obligations" },
+  { value: "friend",             label: "Friends" },
+  { value: "colleague",          label: "Colleagues" },
+  { value: "other",              label: "Other" },
+  { value: "custom",             label: "Custom" },
 ]
 
 interface ParsedRow {

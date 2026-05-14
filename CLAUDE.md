@@ -48,23 +48,47 @@ The socket client (`lib/socket.ts`) is a lazy singleton — it is **not** connec
 
 `LiveFeed` accepts an optional `activityId` prop; when set (activity detail page), it pre-filters entries to that activity and hides the activity filter dropdown.
 
+**Pagination**: `LiveFeed` uses client-side pagination (`PAGE_SIZE = 10`). `paginatedEntries` slices `filteredEntries` based on `currentPage`. A pagination footer (Showing X–Y of N · Prev / Page / Next) appears when `totalPages > 1`. `currentPage` resets to 1 whenever any filter changes or `allEntries.length` changes (new socket entry).
+
 ### Razorpay Webhook
 - **Critical**: `await request.body()` must be called before any JSON parsing — the raw bytes are required for HMAC-SHA256 signature verification against `X-Razorpay-Signature`.
 - The `event_id` is embedded in Razorpay QR code `notes` at QR creation time (`services/razorpay.py`), then read back from `payload.notes.event_id` in the webhook to route the payment to the correct event.
 - Idempotency is enforced by checking `razorpay_payment_id` before inserting — duplicate webhooks are silently skipped.
 - Only `payment.captured` events create entries; all others return `handled: false`.
 
-### WhatsApp RSVP
-Incoming Twilio messages at `POST /api/webhooks/whatsapp` are parsed for RSVP intent:
-- **Coming**: `HAAN`, `YES`, `1`, `HA`, `HAN`
-- **Not coming**: `NA`, `NO`, `2`, `NAHI`
+### WhatsApp Messaging Service
+All WhatsApp messages are sent via `services/whatsapp.py` using Twilio REST API (plain text only — no interactive templates). Five named send functions cover every outbound message type:
 
-Unrecognised replies are silently ignored. Guest lookup uses `invite_sent: true` and sorts by `invite_sent_at` descending to handle guests across multiple events.
+| Function | Trigger | Message |
+|----------|---------|---------|
+| `send_event_invite(guest, event)` | Invite flow | Gujarati invitation with `Reply *HAAN* / *NA*` instruction |
+| `send_rsvp_ack(guest, event, coming)` | RSVP webhook | Confirmation (coming) or regret (not coming) in Gujarati |
+| `send_payment_upi(entry, event)` | Razorpay webhook | UPI receipt with amount, event name, date, UTR |
+| `send_payment_cash(entry, event)` | Manual cash entry | Cash receipt with amount, event name, date |
+| `send_payment_gift(entry, event)` | Manual gift entry | Gift acknowledgment with gift item name, event name, date |
+
+All functions guard `len(phone) != 10` and return `False` without raising. Failures are logged as `[WA] {label} failed → ...{last4}: {exc}` — never the full phone number. All calls are fire-and-forget `BackgroundTask`s.
+
+`_send_text(phone_10, body, *, label)` is the single base sender — no template/interactive path exists. The Twilio sandbox requires each recipient to join once (`join <keyword>` → `+1 415 523 8886`); production requires a WhatsApp Business API-approved sender.
+
+### WhatsApp RSVP
+Incoming Twilio messages at `POST /api/webhooks/whatsapp` are parsed for RSVP intent. **Button taps take priority over text body:**
+- `ButtonPayload == "COMING"` → coming
+- `ButtonPayload == "NOT_COMING"` → not coming
+- Text body `HAAN`, `YES`, `1`, `HA`, `HAN` → coming
+- Text body `NA`, `NO`, `2`, `NAHI` → not coming
+
+Unrecognised replies are silently ignored. Guest lookup uses `invite_sent: true` and sorts by `invite_sent_at` descending to handle guests across multiple events. After updating RSVP status, the webhook fetches the event doc (`guest["event_id"]`) and passes `guest, event, coming` to `send_rsvp_ack`.
 
 ### WhatsApp Confirmation
-`_send_confirmation_and_flag(entry_id, entry, event)` in `routers/entries.py` sends a WhatsApp payment confirmation and sets `confirmation_sent: True` in the DB on success. It is called as a `BackgroundTask` from both:
-- `POST /api/events/{event_id}/entries` (manual entry creation, when phone is present)
-- `POST /api/webhooks/razorpay` (Razorpay webhook, imported from `routers.entries`)
+`_send_confirmation_and_flag(entry_id, entry, event)` in `routers/entries.py` dispatches to the correct send function based on `entry["mode"]`:
+- `"upi"` → `send_payment_upi`
+- `"gift"` → `send_payment_gift`
+- `"cash"` (default) → `send_payment_cash`
+
+Sets `confirmation_sent: True` in the DB on success. Called as a `BackgroundTask` from `POST /api/events/{event_id}/entries` (manual entry creation, when phone is present).
+
+The Razorpay webhook (`routers/webhooks.py`) uses its own inline `_send_upi_and_flag` closure that calls `send_payment_upi` directly — it does **not** import `_send_confirmation_and_flag` from `routers.entries`.
 
 ### External HTTP Calls
 The Razorpay Python SDK is **synchronous** — do not use it directly in async handlers. All Razorpay and Twilio calls use `httpx.AsyncClient` directly with Basic Auth (`services/razorpay.py`, `services/whatsapp.py`).
@@ -93,6 +117,15 @@ The list activities endpoint (`GET /api/events/{event_id}/activities`) returns a
 ### Entry Edit / Delete (Live Feed)
 The live feed table (`components/dashboard/entry-row-actions.tsx`) renders inline edit and delete buttons on every row. Edit opens a dialog with React Hook Form + Zod; delete requires a `delete_reason` string before confirming. Both update TanStack Query cache optimistically and invalidate `entries-summary`.
 
+### Entry Form Layout
+`EntryForm` (`components/entry/entry-form.tsx`) is compact-desktop-first: `h-10` inputs, `text-sm` labels, `space-y-4`, Name + Village in a 2-column grid, payment mode as pill tabs (not large cards). Save resets the form immediately on success — no 2-second overlay. Toast-only feedback.
+
+Two pages embed `EntryForm` in a **sticky two-column layout** (`lg:grid-cols-[2fr_3fr]`, form left ~40%, `LiveFeed` right ~60%):
+- `app/(dashboard)/events/[eventId]/entry/page.tsx` — standalone Record Entry page; header shows event name + date + village as subtitle.
+- `app/(dashboard)/events/[eventId]/activities/[activityId]/page.tsx` — Entries tab of an activity detail page.
+
+The form panel uses `lg:sticky lg:top-4` so it stays visible while the operator scrolls the live feed.
+
 ### Payment Modes
 Three modes are supported: `"cash"`, `"upi"`, `"gift"`.
 
@@ -107,6 +140,26 @@ Three invitation flows exist:
 1. **Bulk send** — `POST /api/events/{event_id}/guests/send-invites` — sends to all uninvited guests by default. Accepts an optional JSON body `{ "guest_ids": [...] }` to restrict to specific guests.
 2. **Individual send** — `POST /api/events/{event_id}/guests/{guest_id}/send-invite` — queues a single invite as a background task and sets `invite_sent: True` on success.
 3. **Selection-based send** — frontend `GuestsTable` renders checkboxes on every row with a "Select All" header (supports indeterminate state via ref). When any guests are selected, a contextual action bar appears with "Send Invites (N)" which calls the bulk endpoint with the selected `guest_ids`.
+
+### Guest Relation Side
+`relation_side` on the `guests` collection stores which social group the guest belongs to. Current valid values:
+
+| Value | Display label |
+|-------|--------------|
+| `close_family` | Close Family & Relatives |
+| `social_obligations` | Social Obligations |
+| `friend` | Friends |
+| `colleague` | Colleagues |
+| `other` | Other |
+| `custom` | Custom (free-text via `custom_relation` field) |
+| `mama_pakkhu` *(legacy)* | Close Family & Relatives |
+| `kaka_pakkhu` *(legacy)* | Close Family & Relatives |
+
+Legacy values (`mama_pakkhu`, `kaka_pakkhu`) are still accepted by the backend `RelationSide` Literal and displayed as "Close Family & Relatives" in the frontend. The guest form normalises them to `close_family` when editing an existing guest.
+
+When `relation_side === "custom"`, the guest also has a `custom_relation` string (free text). The backend only stores `custom_relation` when `relation_side === "custom"` (otherwise `None`). The frontend shows the `custom_relation` text in the Relation column instead of the label.
+
+`RELATION_LABELS` in `types/index.ts` is a `Record<string, string>` (not keyed to the strict type) so legacy keys can be looked up safely.
 
 ### Guest Import
 `POST /api/events/{event_id}/guests/import` copies guests from a source event into the target event. Requires `source_event_id` and an optional `guest_ids` list (omit to import all). Duplicate phones are skipped; RSVP is reset to `"pending"` on all imported guests.
@@ -139,6 +192,10 @@ PDF styling: white background, red (#CC2200) headings, green (#16A34A) amounts, 
 - Sonner for toast notifications
 - Route groups: `(auth)` for `/login` and `/register`; `(dashboard)` for everything else — the dashboard layout handles server-side auth redirect
 
+### Layout & Sizing
+- Dashboard layout (`app/(dashboard)/layout.tsx`) uses `max-w-screen-2xl` (1536px) with `px-6` — sized for 1920px Full HD screens.
+- Do **not** revert to `max-w-7xl`; the wider container is intentional for the desktop-first operator workflow.
+
 ## Key Files to Read First
 
 When touching a feature area, read these files together:
@@ -148,6 +205,7 @@ When touching a feature area, read these files together:
 | Auth | `middleware/auth.py`, `routers/auth.py` | `app/(auth)/login/page.tsx`, `app/(dashboard)/layout.tsx` |
 | Events | `routers/events.py`, `services/razorpay.py` | `app/(dashboard)/events/`, `components/events/` |
 | Entries (live) | `routers/entries.py`, `services/socket_manager.py` | `app/(dashboard)/events/[eventId]/page.tsx`, `components/dashboard/live-feed.tsx`, `components/dashboard/entry-row-actions.tsx` |
+| Entry form | `routers/entries.py` | `app/(dashboard)/events/[eventId]/entry/page.tsx`, `components/entry/entry-form.tsx` |
 | Activities | `routers/activities.py`, `models/activity.py`, `schemas/activity.py` | `app/(dashboard)/events/[eventId]/activities/`, `components/activities/`, `types/activity.ts` |
 | Guests / RSVP / Invites | `routers/guests.py`, `routers/webhooks.py` | `app/(dashboard)/events/[eventId]/guests/page.tsx`, `components/guests/` |
 | Webhooks | `routers/webhooks.py`, `services/whatsapp.py` | N/A |
@@ -161,7 +219,7 @@ When touching a feature area, read these files together:
 - **Cookie `secure` flag** — hardcoded `False` in `routers/auth.py`; must be set `True` in production
 - **Offline entry queuing** — offline banner shown on entry page but form submission has no local queue/retry
 - **`QrDisplay` component** — fully built (`components/events/qr-display.tsx`) but not imported anywhere; event dashboard uses a plain `<a>` link instead
-- **Pagination / search** — no pagination or server-side search on entries or guests lists
+- **Guest list pagination** — no pagination on the guests table (entries list has client-side pagination)
 
 ## Environment Setup
 

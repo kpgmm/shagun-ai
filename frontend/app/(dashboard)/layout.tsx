@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-background">
       {/* Top navigation */}
       <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-3">
           <Link href="/events" className="flex items-center gap-2">
             <ShagunLogo size="sm" />
             <span className="text-xl font-bold text-primary">Shagun</span>
@@ -56,7 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </header>
 
       {/* Page content */}
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-screen-2xl px-6 py-6">{children}</main>
     </div>
   )
 }

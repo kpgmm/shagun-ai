@@ -14,9 +14,15 @@ router = APIRouter()
 
 
 async def _send_confirmation_and_flag(entry_id, entry: dict, event: dict):
-    """Send WhatsApp payment confirmation and mark confirmation_sent=True on success."""
-    from services.whatsapp import send_confirmation
-    ok = await send_confirmation(entry, event)
+    """Send mode-specific WhatsApp payment confirmation and mark confirmation_sent=True."""
+    from services.whatsapp import send_payment_cash, send_payment_gift, send_payment_upi
+    mode = entry.get("mode", "cash")
+    if mode == "upi":
+        ok = await send_payment_upi(entry, event)
+    elif mode == "gift":
+        ok = await send_payment_gift(entry, event)
+    else:
+        ok = await send_payment_cash(entry, event)
     if ok:
         db = get_db()
         await db.entries.update_one(

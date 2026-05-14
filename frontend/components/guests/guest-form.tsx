@@ -13,23 +13,41 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { api, ApiError } from "@/lib/api"
-import type { Guest, RelationSide } from "@/types"
+import type { Guest } from "@/types"
 
-const schema = z.object({
-  name: z.string().min(2, "Name is required"),
-  phone: z.string().regex(/^\d{10}$/, "Enter 10-digit phone number"),
-  village: z.string().min(1, "Village is required"),
-  relation_side: z.enum(["mama_pakkhu", "kaka_pakkhu", "friend", "colleague", "other"]),
-})
+const NEW_RELATION_VALUES = ["close_family", "social_obligations", "friend", "colleague", "other", "custom"] as const
+type NewRelationSide = typeof NEW_RELATION_VALUES[number]
+
+// Map legacy DB values to the new set for form defaults
+function normalizeRelationSide(rs: string): NewRelationSide {
+  if (rs === "mama_pakkhu" || rs === "kaka_pakkhu") return "close_family"
+  if ((NEW_RELATION_VALUES as readonly string[]).includes(rs)) return rs as NewRelationSide
+  return "other"
+}
+
+const schema = z
+  .object({
+    name: z.string().min(2, "Name is required"),
+    phone: z.string().regex(/^\d{10}$/, "Enter 10-digit phone number"),
+    village: z.string().min(1, "Village is required"),
+    relation_side: z.enum(NEW_RELATION_VALUES),
+    custom_relation: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.relation_side === "custom" && !data.custom_relation?.trim()) {
+      ctx.addIssue({ code: "custom", path: ["custom_relation"], message: "Please describe the relation" })
+    }
+  })
 
 type FormValues = z.infer<typeof schema>
 
-const RELATIONS = [
-  { value: "mama_pakkhu", label: "Mama Pakkhu (Maternal)" },
-  { value: "kaka_pakkhu", label: "Kaka Pakkhu (Paternal)" },
-  { value: "friend", label: "Friend" },
-  { value: "colleague", label: "Colleague" },
-  { value: "other", label: "Other" },
+const RELATIONS: { value: NewRelationSide; label: string }[] = [
+  { value: "close_family",       label: "Close Family & Relatives" },
+  { value: "social_obligations", label: "Social Obligations" },
+  { value: "friend",             label: "Friends" },
+  { value: "colleague",          label: "Colleagues" },
+  { value: "other",              label: "Other" },
+  { value: "custom",             label: "Custom" },
 ]
 
 interface Props {
@@ -49,18 +67,25 @@ export function GuestForm({ eventId, guest, open, onClose }: Props) {
       name: guest?.name ?? "",
       phone: guest?.phone ?? "",
       village: guest?.village ?? "",
-      relation_side: (guest?.relation_side as RelationSide) ?? "other",
+      relation_side: normalizeRelationSide(guest?.relation_side ?? "other"),
+      custom_relation: guest?.custom_relation ?? "",
     },
   })
+
+  const selectedRelation = form.watch("relation_side")
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
     try {
+      const payload = {
+        ...values,
+        custom_relation: values.relation_side === "custom" ? values.custom_relation : undefined,
+      }
       if (guest) {
-        await api.put(`/api/events/${eventId}/guests/${guest.id}`, values)
+        await api.put(`/api/events/${eventId}/guests/${guest.id}`, payload)
         toast.success("Guest updated")
       } else {
-        await api.post(`/api/events/${eventId}/guests`, values)
+        await api.post(`/api/events/${eventId}/guests`, payload)
         toast.success("Guest added")
       }
       await queryClient.invalidateQueries({ queryKey: ["guests", eventId] })
@@ -132,7 +157,7 @@ export function GuestForm({ eventId, guest, open, onClose }: Props) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Relation Side</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select relation" />
@@ -150,6 +175,24 @@ export function GuestForm({ eventId, guest, open, onClose }: Props) {
                 </FormItem>
               )}
             />
+
+            {/* Custom relation text input — shown only when Custom is selected */}
+            {selectedRelation === "custom" && (
+              <FormField
+                control={form.control}
+                name="custom_relation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom Relation</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Business Partner, Neighbour…" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>
                 {loading ? "Saving..." : guest ? "Update" : "Add Guest"}

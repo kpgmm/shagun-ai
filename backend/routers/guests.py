@@ -24,6 +24,7 @@ def _serialize_guest(g: dict) -> dict:
         "phone": g["phone"],
         "village": g["village"],
         "relation_side": g["relation_side"],
+        "custom_relation": g.get("custom_relation"),
         "rsvp_status": g["rsvp_status"],
         "rsvp_at": g["rsvp_at"].isoformat() if g.get("rsvp_at") else None,
         "invite_sent": g["invite_sent"],
@@ -84,6 +85,7 @@ async def add_guest(
         "phone": phone,
         "village": body.village.strip(),
         "relation_side": body.relation_side,
+        "custom_relation": body.custom_relation if body.relation_side == "custom" else None,
         "rsvp_status": "pending",
         "rsvp_at": None,
         "invite_sent": False,
@@ -126,6 +128,7 @@ async def bulk_add_guests(
             "phone": phone,
             "village": item.village.strip(),
             "relation_side": item.relation_side,
+            "custom_relation": item.custom_relation if item.relation_side == "custom" else None,
             "rsvp_status": "pending",
             "rsvp_at": None,
             "invite_sent": False,
@@ -284,10 +287,10 @@ async def send_invite_single(
     if not guest:
         raise HTTPException(status_code=404, detail="Guest not found")
 
-    from services.whatsapp import send_invite as _send_invite
+    from services.whatsapp import send_event_invite
 
     async def _send_and_flag():
-        ok = await _send_invite(guest, event)
+        ok = await send_event_invite(guest, event)
         if ok:
             await db.guests.update_one(
                 {"_id": goid},
@@ -326,9 +329,9 @@ async def send_invites(
 
     guests = [g async for g in db.guests.find(query)]
 
-    from services.whatsapp import send_invite
+    from services.whatsapp import send_event_invite
     for guest in guests:
-        background_tasks.add_task(send_invite, guest, event)
+        background_tasks.add_task(send_event_invite, guest, event)
     # Mark invite_sent after queueing (optimistic update)
     await db.guests.update_many(
         {"event_id": ObjectId(event_id), "_id": {"$in": [g["_id"] for g in guests]}},

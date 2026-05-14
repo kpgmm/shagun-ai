@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Search, X } from "lucide-react"
+import { AlertTriangle, ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,8 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
   const [activityFilter, setActivityFilter] = useState<string>("all")
   const [minAmount, setMinAmount] = useState("")
   const [maxAmount, setMaxAmount] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 10
 
   const { data: allEntries = [], isLoading } = useQuery<Entry[]>({
     queryKey: ["entries", eventId],
@@ -88,6 +90,18 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
     minAmount !== "" ||
     maxAmount !== ""
 
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE))
+
+  // Reset to page 1 whenever filters change or entries change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, modeFilter, activityFilter, minAmount, maxAmount, allEntries.length])
+
+  const paginatedEntries = useMemo(
+    () => filteredEntries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredEntries, currentPage],
+  )
+
   function clearFilters() {
     setSearch("")
     setModeFilter("all")
@@ -139,13 +153,13 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
     <div className="space-y-3">
       {/* Header row */}
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium">Live Entry Feed</h2>
+        <h2 className="text-base font-semibold">Live Entry Feed</h2>
         <span
-          className={`flex h-2 w-2 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+          className={`flex h-2.5 w-2.5 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
         />
-        <span className="text-xs text-muted-foreground">{connected ? "Live" : "Connecting..."}</span>
+        <span className="text-sm text-muted-foreground">{connected ? "Live" : "Connecting..."}</span>
         {isFiltered && (
-          <span className="ml-auto text-xs text-muted-foreground">
+          <span className="ml-auto text-sm text-muted-foreground">
             {filteredEntries.length} of {scopedEntries.length} entries
           </span>
         )}
@@ -155,22 +169,22 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
       <div className="space-y-2">
         {/* Row 1: search + mode toggle */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or village..."
-              className="pl-8 h-8 text-sm"
+              className="pl-9 h-10 text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
           {/* Mode toggle */}
-          <div className="flex rounded-lg border overflow-hidden text-xs font-medium">
+          <div className="flex rounded-lg border overflow-hidden text-sm font-medium">
             {(["all", "cash", "upi", "gift"] as const).map((m) => (
               <button
                 key={m}
-                className={`px-3 py-1.5 transition-colors ${
+                className={`px-4 py-2 transition-colors ${
                   modeFilter === m
                     ? "bg-primary text-white"
                     : "hover:bg-muted text-muted-foreground"
@@ -188,7 +202,7 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
           {/* Activity filter — only on the main event dashboard */}
           {!activityId && activities.length > 0 && (
             <Select value={activityFilter} onValueChange={setActivityFilter}>
-              <SelectTrigger className="h-8 text-xs w-[180px]">
+              <SelectTrigger className="h-10 text-sm w-[200px]">
                 <SelectValue placeholder="All Activities" />
               </SelectTrigger>
               <SelectContent>
@@ -202,25 +216,25 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
             </Select>
           )}
 
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground shrink-0">₹ Min</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground shrink-0">₹ Min</span>
             <Input
               type="number"
               inputMode="numeric"
               placeholder="0"
-              className="h-8 text-xs w-20"
+              className="h-10 text-sm w-24"
               value={minAmount}
               onChange={(e) => setMinAmount(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground shrink-0">Max</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground shrink-0">Max</span>
             <Input
               type="number"
               inputMode="numeric"
               placeholder="∞"
-              className="h-8 text-xs w-20"
+              className="h-10 text-sm w-24"
               value={maxAmount}
               onChange={(e) => setMaxAmount(e.target.value)}
             />
@@ -230,10 +244,10 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs gap-1 text-muted-foreground"
+              className="h-10 text-sm gap-1.5 text-muted-foreground"
               onClick={clearFilters}
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
               Clear
             </Button>
           )}
@@ -267,23 +281,23 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEntries.map((entry) => (
+              {paginatedEntries.map((entry) => (
                 <TableRow
                   key={entry.id}
-                  className={entry.is_unknown_guest ? "bg-amber-50 hover:bg-amber-100" : ""}
+                  className={`text-sm ${entry.is_unknown_guest ? "bg-amber-50 hover:bg-amber-100" : ""}`}
                 >
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium py-3">
                     {entry.is_unknown_guest && (
-                      <AlertTriangle className="inline h-3.5 w-3.5 text-amber-500 mr-1 mb-0.5" />
+                      <AlertTriangle className="inline h-4 w-4 text-amber-500 mr-1 mb-0.5" />
                     )}
                     {entry.name}
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground py-3">
                     {entry.village || "—"}
                   </TableCell>
-                  <TableCell className="font-semibold text-primary">
+                  <TableCell className="font-semibold text-primary py-3">
                     {entry.mode === "gift" ? (
-                      <span className="text-purple-700 font-medium text-sm">
+                      <span className="text-purple-700 font-medium">
                         {entry.amount > 0 && (
                           <span className="text-primary font-bold mr-1">
                             {formatIndianCurrency(entry.amount)} ·
@@ -293,10 +307,10 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
                       </span>
                     ) : formatIndianCurrency(entry.amount)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-3">
                     <Badge
                       variant="secondary"
-                      className={`text-xs ${
+                      className={`text-xs font-semibold px-2.5 py-0.5 ${
                         entry.mode === "upi"
                           ? "bg-blue-50 text-blue-700"
                           : entry.mode === "gift"
@@ -308,22 +322,56 @@ export function LiveFeed({ eventId, activityId }: { eventId: string; activityId?
                     </Badge>
                   </TableCell>
                   {!activityId && (
-                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground py-3">
                       {entry.activity_id
                         ? (activityNameMap.get(entry.activity_id) ?? "—")
                         : DEFAULT_ACTIVITY_LABEL}
                     </TableCell>
                   )}
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground py-3">
                     {timeAgo(entry.created_at)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-3">
                     <EntryRowActions entry={entry} eventId={eventId} />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination footer */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t bg-muted/30">
+              <span className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, filteredEntries.length)} of{" "}
+                {filteredEntries.length} entries
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium px-2 tabular-nums">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -134,10 +134,18 @@ async def razorpay_webhook(request: Request, background_tasks: BackgroundTasks):
     # Emit to live dashboard
     await emit_to_event_room(event_id, "new_entry", _serialize_entry(doc))
 
-    # Send WhatsApp confirmation asynchronously
+    # Send WhatsApp UPI confirmation asynchronously
     if phone_clean:
-        from routers.entries import _send_confirmation_and_flag
-        background_tasks.add_task(_send_confirmation_and_flag, doc["_id"], doc, event)
+        from services.whatsapp import send_payment_upi
+
+        async def _send_upi_and_flag():
+            ok = await send_payment_upi(doc, event)
+            if ok:
+                await db.entries.update_one(
+                    {"_id": doc["_id"]}, {"$set": {"confirmation_sent": True}}
+                )
+
+        background_tasks.add_task(_send_upi_and_flag)
 
     # Always return 200 to Razorpay
     return {"status": "ok", "handled": True}
@@ -152,6 +160,7 @@ async def whatsapp_webhook(
     form_data = await request.form()
     from_number = str(form_data.get("From", ""))
     body_text = str(form_data.get("Body", "")).strip().upper()
+    button_payload = str(form_data.get("ButtonPayload", "")).strip().upper()
 
     # Strip whatsapp: prefix and +91
     phone = from_number.replace("whatsapp:", "").replace("+91", "").replace("+", "").strip()[-10:]
@@ -159,11 +168,15 @@ async def whatsapp_webhook(
     if len(phone) != 10:
         return {"status": "ok"}
 
-    # Map reply to RSVP status
+    # Map reply to RSVP status — button tap takes priority over text body
     coming_words = {"HAAN", "YES", "1", "HA", "HAN"}
     not_coming_words = {"NA", "NO", "2", "NAHI"}
 
-    if body_text in coming_words:
+    if button_payload == "COMING":
+        rsvp_status = "coming"
+    elif button_payload == "NOT_COMING":
+        rsvp_status = "not_coming"
+    elif body_text in coming_words:
         rsvp_status = "coming"
     elif body_text in not_coming_words:
         rsvp_status = "not_coming"
@@ -179,13 +192,15 @@ async def whatsapp_webhook(
     if not guest:
         return {"status": "ok"}
 
+    event = await db.events.find_one({"_id": guest["event_id"]})
+
     await db.guests.update_one(
         {"_id": guest["_id"]},
         {"$set": {"rsvp_status": rsvp_status, "rsvp_at": datetime.now(timezone.utc)}},
     )
 
     # Send RSVP acknowledgment
-    from services.whatsapp import send_rsvp_ack
-    background_tasks.add_task(send_rsvp_ack, phone, rsvp_status == "coming")
+    from services.whatsapp import send_rsvp_ack as _send_rsvp_ack
+    background_tasks.add_task(_send_rsvp_ack, guest, event, rsvp_status == "coming")
 
     return {"status": "ok"}

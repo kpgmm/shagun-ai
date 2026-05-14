@@ -127,8 +127,12 @@ export default function ActivityDetailPage() {
 
       {/* Tab: Entries */}
       {activeTab === "entries" && (
-        <div className="space-y-6">
-          <EntryForm eventId={eventId} activityId={activityId} />
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-start">
+          {/* Entry form — sticky so it stays visible while scrolling the feed */}
+          <div className="rounded-xl border bg-card p-5 lg:sticky lg:top-4">
+            <p className="text-base font-semibold mb-4">Record Entry</p>
+            <EntryForm eventId={eventId} activityId={activityId} />
+          </div>
           <LiveFeed eventId={eventId} activityId={activityId} />
         </div>
       )}

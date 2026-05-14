@@ -442,7 +442,12 @@
       <!-- ── ENTRIES ────────────────────────────────────────────────────── -->
       <section class="section" id="entries">
         <div class="section-title"><span class="sec-icon">📝</span> Recording Entries</div>
-        <p>An entry records a single payment or gift from one guest or party. Navigate to <strong>Event Dashboard → Record Entry</strong>, or open an activity and use the entry form there.</p>
+        <p>An entry records a single payment or gift from one guest or party. Navigate to <strong>Event Dashboard → Record Entry</strong>, or open an activity and use the entry form on its <strong>Entries</strong> tab.</p>
+
+        <div class="callout info">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body"><strong>Side-by-side layout:</strong> Both the Record Entry page and the Activity Entries tab show the entry form on the left and the Live Entry Feed on the right — so the operator can record entries and watch the feed without switching pages.</div>
+        </div>
 
         <h3>Payment Modes</h3>
         <table class="data-table">
@@ -480,6 +485,9 @@
         <h3>Razorpay UPI (Automatic)</h3>
         <p>When a guest scans the event's Razorpay QR code and pays, the entry is created <strong>automatically</strong> — no manual input needed. The system also tries to match the phone number to a guest in your list.</p>
 
+        <h3>Live Entry Feed Pagination</h3>
+        <p>The Live Entry Feed shows <strong>10 entries per page</strong>. When there are more than 10 entries, a pagination bar appears at the bottom of the table showing <em>"Showing X–Y of N entries"</em> with Prev / Next buttons. The page resets to 1 automatically whenever you change a filter or a new entry arrives in real time.</p>
+
         <h3>Editing and Deleting Entries</h3>
         <p>In the Live Entry Feed, each row has <strong>edit (✏️)</strong> and <strong>delete (🗑)</strong> icons. Deleting requires a reason (e.g., "Duplicate entry"). Deleted entries are archived, not permanently removed.</p>
       </section>
@@ -497,14 +505,16 @@
         </ul>
 
         <h3>Relation Side</h3>
+        <p>Categorise each guest by their relationship to the host family. Used for filtering the guest list and grouping entries in reports.</p>
         <table class="data-table">
           <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
           <tbody>
-            <tr><td>Mama Pakkhu</td><td>Guests from the maternal family side</td></tr>
-            <tr><td>Kaka Pakkhu</td><td>Guests from the paternal family side</td></tr>
-            <tr><td>Friend</td><td>Personal friends</td></tr>
-            <tr><td>Colleague</td><td>Work colleagues</td></tr>
-            <tr><td>Other</td><td>Any other category</td></tr>
+            <tr><td>Close Family &amp; Relatives</td><td>Immediate family, close relatives from both sides</td></tr>
+            <tr><td>Social Obligations</td><td>Guests invited out of social courtesy or tradition</td></tr>
+            <tr><td>Friends</td><td>Personal friends of the host family</td></tr>
+            <tr><td>Colleagues</td><td>Work colleagues or professional contacts</td></tr>
+            <tr><td>Other</td><td>Any category not listed above</td></tr>
+            <tr><td>Custom</td><td>Free-text — type your own relation label (e.g., "Business Partner", "Neighbour"). A text field appears when this option is selected.</td></tr>
           </tbody>
         </table>
 
@@ -584,7 +594,7 @@
             <li><div class="step-body"><div class="step-title">Import or add guests</div><div class="step-desc">Use "Import from Event" if guests are same as last year, or upload an Excel file with the new list.</div></div></li>
             <li><div class="step-body"><div class="step-title">Send invitations</div><div class="step-desc">Go to Guests page → Send Invites (uninvited only). Guests receive a WhatsApp message with date, venue, and RSVP link.</div></div></li>
             <li><div class="step-body"><div class="step-title">Activate on the event day</div><div class="step-desc">Dashboard → Activate Event. The Razorpay QR is now live for digital payments.</div></div></li>
-            <li><div class="step-body"><div class="step-title">Record entries throughout the day</div><div class="step-desc">Operator opens Record Entry. Type the guest name — autocomplete fills village/phone. Select Cash/UPI/Gift and enter amount. Save.</div></div></li>
+            <li><div class="step-body"><div class="step-title">Record entries throughout the day</div><div class="step-desc">Operator opens <strong>Record Entry</strong>. The page shows the entry form on the left and the Live Feed on the right. Type the guest name — autocomplete fills village/phone. Select Cash/UPI/Gift, enter the amount, and click <strong>Save Entry</strong>. The new entry appears instantly in the feed on the right.</div></div></li>
             <li><div class="step-body"><div class="step-title">Complete and download report</div><div class="step-desc">Dashboard → Mark Completed → Download PDF Report.</div></div></li>
           </ol>
         </div>
@@ -706,7 +716,23 @@
             How do I use the live feed filters?
             <span class="arrow">▼</span>
           </button>
-          <div class="faq-answer">The live feed supports: search by name/village, mode filter (All / Cash / UPI / Gift), activity filter, and min/max amount range. All filters work together. Click <strong>Clear</strong> to reset all filters at once.</div>
+          <div class="faq-answer">The live feed supports: search by name/village, mode filter (All / Cash / UPI / Gift), activity filter, and min/max amount range. All filters work together. Click <strong>Clear</strong> to reset all filters at once. The page number also resets to 1 whenever you change a filter.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            I have many entries — how do I navigate through them?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">The Live Entry Feed shows 10 entries per page. When there are more than 10, a pagination bar appears at the bottom of the table with <strong>Prev</strong> and <strong>Next</strong> buttons and a page counter (e.g., "2 / 5"). You can also use the search and filter controls to narrow the list before paginating.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            What does "Custom" mean in the Relation Side field for guests?
+            <span class="arrow">▼</span>
+          </button>
+          <div class="faq-answer">Selecting <strong>Custom</strong> reveals a text field where you can type any relation label that doesn't fit the standard options — for example, "Business Partner", "Neighbour", or "Pandit ji". The custom text is shown in the Relation column of the guest table instead of the word "Custom".</div>
         </div>
       </section>
 

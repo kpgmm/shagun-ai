@@ -32,15 +32,21 @@ export interface Event {
   created_at: string
 }
 
-export type RelationSide = "mama_pakkhu" | "kaka_pakkhu" | "friend" | "colleague" | "other"
+export type RelationSide =
+  | "close_family" | "social_obligations" | "friend" | "colleague" | "other" | "custom"
+  | "mama_pakkhu" | "kaka_pakkhu"  // legacy — kept for backward compatibility
 export type RsvpStatus = "pending" | "coming" | "not_coming"
 
-export const RELATION_LABELS: Record<RelationSide, string> = {
-  mama_pakkhu: "Mama Pakkhu (Maternal)",
-  kaka_pakkhu: "Kaka Pakkhu (Paternal)",
-  friend: "Friend",
-  colleague: "Colleague",
+export const RELATION_LABELS: Record<string, string> = {
+  close_family: "Close Family & Relatives",
+  social_obligations: "Social Obligations",
+  friend: "Friends",
+  colleague: "Colleagues",
   other: "Other",
+  custom: "Custom",
+  // legacy mappings
+  mama_pakkhu: "Close Family & Relatives",
+  kaka_pakkhu: "Close Family & Relatives",
 }
 
 export interface Guest {
@@ -50,6 +56,7 @@ export interface Guest {
   phone: string
   village: string
   relation_side: RelationSide
+  custom_relation?: string
   rsvp_status: RsvpStatus
   rsvp_at?: string
   invite_sent: boolean

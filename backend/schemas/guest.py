@@ -2,7 +2,11 @@ import re
 from typing import List, Literal, Optional
 from pydantic import BaseModel, field_validator
 
-RelationSide = Literal["mama_pakkhu", "kaka_pakkhu", "friend", "colleague", "other"]
+RelationSide = Literal[
+    "close_family", "social_obligations", "friend", "colleague", "other", "custom",
+    # legacy values kept for backward compatibility
+    "mama_pakkhu", "kaka_pakkhu",
+]
 RsvpStatus = Literal["pending", "coming", "not_coming"]
 
 
@@ -11,6 +15,7 @@ class CreateGuestRequest(BaseModel):
     phone: str
     village: str
     relation_side: RelationSide
+    custom_relation: Optional[str] = None
 
     @field_validator("phone")
     @classmethod
@@ -26,6 +31,7 @@ class BulkGuestItem(BaseModel):
     phone: str
     village: str
     relation_side: RelationSide = "other"
+    custom_relation: Optional[str] = None
 
 
 class UpdateGuestRequest(BaseModel):
@@ -33,6 +39,7 @@ class UpdateGuestRequest(BaseModel):
     phone: Optional[str] = None
     village: Optional[str] = None
     relation_side: Optional[RelationSide] = None
+    custom_relation: Optional[str] = None
     rsvp_status: Optional[RsvpStatus] = None
 
 

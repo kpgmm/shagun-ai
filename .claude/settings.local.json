@@ -31,7 +31,9 @@
       "PowerShell(try { $r = Invoke-RestMethod -Uri \"http://localhost:8000/\" -Method Get; $r } catch { \"Server not running: $_\" })",
       "Bash(ngrok version *)",
       "PowerShell(Get-Command *)",
-      "PowerShell(python -m pip install pyngrok --quiet; python -c \"import pyngrok; print\\('pyngrok OK'\\)\" 2>&1)"
+      "PowerShell(python -m pip install pyngrok --quiet; python -c \"import pyngrok; print\\('pyngrok OK'\\)\" 2>&1)",
+      "Bash(xargs grep -l \"guest\\\\|Guest\")",
+      "Bash(xargs grep -l \"relation_side\\\\|RelationSide\\\\|relation\")"
     ]
   }
 }

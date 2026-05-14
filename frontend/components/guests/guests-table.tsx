@@ -13,20 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { GuestForm } from "@/components/guests/guest-form"
 import { api, ApiError } from "@/lib/api"
+import { RELATION_LABELS } from "@/types"
 import type { Guest, RsvpStatus } from "@/types"
 
 const RSVP_BADGES: Record<RsvpStatus, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-gray-100 text-gray-600" },
   coming: { label: "Coming ✅", className: "bg-green-100 text-green-700" },
   not_coming: { label: "Not Coming ❌", className: "bg-red-100 text-red-700" },
-}
-
-const RELATION_LABELS: Record<string, string> = {
-  mama_pakkhu: "Mama Pakkhu",
-  kaka_pakkhu: "Kaka Pakkhu",
-  friend: "Friend",
-  colleague: "Colleague",
-  other: "Other",
 }
 
 export function GuestsTable({ eventId }: { eventId: string }) {
@@ -190,14 +183,17 @@ export function GuestsTable({ eventId }: { eventId: string }) {
         <div className="flex flex-wrap items-center gap-3">
           <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
           <Select value={filterRelation} onValueChange={setFilterRelation}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-52">
               <SelectValue placeholder="All Relations" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Relations</SelectItem>
-              {Object.entries(RELATION_LABELS).map(([v, l]) => (
-                <SelectItem key={v} value={v}>{l}</SelectItem>
-              ))}
+              <SelectItem value="close_family">Close Family & Relatives</SelectItem>
+              <SelectItem value="social_obligations">Social Obligations</SelectItem>
+              <SelectItem value="friend">Friends</SelectItem>
+              <SelectItem value="colleague">Colleagues</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterRsvp} onValueChange={setFilterRsvp}>
@@ -308,7 +304,9 @@ export function GuestsTable({ eventId }: { eventId: string }) {
                   <TableCell className="text-sm text-muted-foreground">{g.phone}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm">{g.village}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm">
-                    {RELATION_LABELS[g.relation_side] ?? g.relation_side}
+                    {g.relation_side === "custom" && g.custom_relation
+                      ? g.custom_relation
+                      : (RELATION_LABELS[g.relation_side] ?? g.relation_side)}
                   </TableCell>
                   <TableCell>
                     {g.invite_sent ? (
